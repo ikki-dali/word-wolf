@@ -52,10 +52,15 @@ export default function PlayerPage() {
     setSelectedVote(votedId);
   };
 
-  const confirmVote = () => {
+  const confirmVote = async () => {
     if (!selectedVote || hasVoted) return;
-    castVote(playerId, selectedVote);
-    alert('投票完了しました！');
+    try {
+      await castVote(playerId, selectedVote);
+      alert('投票完了しました！');
+    } catch (err) {
+      console.error('[confirmVote] Error:', err);
+      alert('投票に失敗しました');
+    }
   };
 
   const formatTime = (seconds: number) => {

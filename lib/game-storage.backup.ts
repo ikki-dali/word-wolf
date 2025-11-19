@@ -1,7 +1,6 @@
 import { GameSession, Player, TopicSet } from './types';
-import { database } from './firebase';
-import { ref, set, get, onValue, off } from 'firebase/database';
 
+const STORAGE_KEY = 'wordwolf-game-session';
 const SESSION_ID_KEY = 'wordwolf-session-id';
 
 export const TOPICS: TopicSet[] = [
@@ -30,7 +29,7 @@ export const TOPICS: TopicSet[] = [
   { id: 18, name: '個人', citizen: 'これだけは譲れん！のもの', wolf: '周りに引かれる好きなもの' },
 ];
 
-export const createGameSession = async (): Promise<GameSession> => {
+export const createGameSession = (): GameSession => {
   const sessionId = generateSessionId();
   const session: GameSession = {
     id: sessionId,
@@ -45,56 +44,29 @@ export const createGameSession = async (): Promise<GameSession> => {
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
-
-  console.log('[createGameSession] Creating session:', sessionId);
-
-  // Save to Firebase
-  const sessionRef = ref(database, `sessions/${sessionId}`);
-  await set(sessionRef, session);
-
-  // Save session ID to localStorage for easy access
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(SESSION_ID_KEY, sessionId);
-  }
-
+  saveGameSession(session);
+  localStorage.setItem(SESSION_ID_KEY, sessionId);
   return session;
 };
 
-export const getGameSession = async (sessionId?: string): Promise<GameSession | null> => {
+export const getGameSession = (): GameSession | null => {
   if (typeof window === 'undefined') return null;
 
-  // Get session ID from parameter or localStorage
-  const id = sessionId || localStorage.getItem(SESSION_ID_KEY);
-  if (!id) {
-    console.log('[getGameSession] No session ID found');
-    return null;
-  }
-
-  console.log('[getGameSession] Fetching session:', id);
+  const data = localStorage.getItem(STORAGE_KEY);
+  if (!data) return null;
 
   try {
-    const sessionRef = ref(database, `sessions/${id}`);
-    const snapshot = await get(sessionRef);
-
-    if (snapshot.exists()) {
-      return snapshot.val() as GameSession;
-    } else {
-      console.log('[getGameSession] Session not found:', id);
-      return null;
-    }
-  } catch (error) {
-    console.error('[getGameSession] Error:', error);
+    return JSON.parse(data);
+  } catch {
     return null;
   }
 };
 
-export const saveGameSession = async (session: GameSession): Promise<void> => {
+export const saveGameSession = (session: GameSession): void => {
+  if (typeof window === 'undefined') return;
+
   session.updatedAt = Date.now();
-
-  console.log('[saveGameSession] Saving session:', session.id);
-
-  const sessionRef = ref(database, `sessions/${session.id}`);
-  await set(sessionRef, session);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 };
 
 export const getCurrentSessionId = (): string | null => {
@@ -102,22 +74,11 @@ export const getCurrentSessionId = (): string | null => {
   return localStorage.getItem(SESSION_ID_KEY);
 };
 
-export const setCurrentSessionId = (sessionId: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(SESSION_ID_KEY, sessionId);
-};
-
-export const addPlayer = async (name: string): Promise<Player> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) {
+export const addPlayer = (name: string): Player => {
+  const session = getGameSession();
+  if (!session) {
     console.error('[addPlayer] No active session found!');
     throw new Error('No active session');
-  }
-
-  const session = await getGameSession(sessionId);
-  if (!session) {
-    console.error('[addPlayer] Session not found:', sessionId);
-    throw new Error('Session not found');
   }
 
   console.log('[addPlayer] Current session:', session.id, 'Players before:', session.players.length);
@@ -131,47 +92,35 @@ export const addPlayer = async (name: string): Promise<Player> => {
   session.players.push(player);
   console.log('[addPlayer] Added player:', player.name, 'Total players now:', session.players.length);
 
-  await saveGameSession(session);
-  console.log('[addPlayer] Session saved to Firebase');
+  saveGameSession(session);
+  console.log('[addPlayer] Session saved to localStorage');
 
   return player;
 };
 
-export const removePlayer = async (playerId: string): Promise<void> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) return;
-
-  const session = await getGameSession(sessionId);
+export const removePlayer = (playerId: string): void => {
+  const session = getGameSession();
   if (!session) return;
 
   session.players = session.players.filter(p => p.id !== playerId);
-  await saveGameSession(session);
+  saveGameSession(session);
 };
 
-export const updatePlayer = async (playerId: string, updates: Partial<Player>): Promise<void> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) return;
-
-  const session = await getGameSession(sessionId);
+export const updatePlayer = (playerId: string, updates: Partial<Player>): void => {
+  const session = getGameSession();
   if (!session) return;
 
   const player = session.players.find(p => p.id === playerId);
   if (player) {
     Object.assign(player, updates);
-    await saveGameSession(session);
+    saveGameSession(session);
   }
 };
 
-export const shuffleTeams = async (): Promise<Player[][]> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) {
-    console.error('[shuffleTeams] No session found');
-    return [];
-  }
-
-  const session = await getGameSession(sessionId);
+export const shuffleTeams = (): Player[][] => {
+  const session = getGameSession();
   if (!session) {
-    console.error('[shuffleTeams] Session not found');
+    console.error('[shuffleTeams] No session found');
     return [];
   }
 
@@ -195,7 +144,10 @@ export const shuffleTeams = async (): Promise<Player[][]> => {
       const teamMembers = shuffled.slice(startIndex, startIndex + size);
       startIndex += size;
 
+      // チームが存在する場合は必ず追加（3人未満でも）
       if (teamMembers.length > 0) {
+        // 各チームにランダムなお題を割り当て（お題は重複OK）
+        // チーム数がお題数より多い場合でも、全チームに確実にお題が割り当てられます
         const randomTopicId = Math.floor(Math.random() * TOPICS.length) + 1;
         const wolfIndex = Math.floor(Math.random() * teamMembers.length);
 
@@ -227,12 +179,15 @@ export const shuffleTeams = async (): Promise<Player[][]> => {
     }
   }
 
+  // Update session with new teams and history
   session.teams = bestTeams;
 
+  // チーム分けが成功した場合のみplayersを更新
   if (bestTeams.length > 0) {
     session.players = bestTeams.flat();
     console.log('[shuffleTeams] Created', bestTeams.length, 'teams with total', session.players.length, 'players');
   } else {
+    // フォールバック: チーム分けに失敗した場合、全員を1チームにする
     console.warn('[shuffleTeams] チーム分けに失敗しました。全員を1チームにします。');
     const randomTopicId = Math.floor(Math.random() * TOPICS.length) + 1;
     const wolfIndex = Math.floor(Math.random() * session.players.length);
@@ -246,6 +201,7 @@ export const shuffleTeams = async (): Promise<Player[][]> => {
     session.teams = [session.players];
   }
 
+  // Verify all players have required fields
   session.players.forEach((p) => {
     if (!p.topicId || !p.teamId || !p.role) {
       console.error(`[shuffleTeams] Player ${p.name} missing fields:`, {
@@ -267,29 +223,24 @@ export const shuffleTeams = async (): Promise<Player[][]> => {
   session.history = [...session.history, ...newPairs];
 
   console.log('[shuffleTeams] Final teams:', session.teams.length, 'History pairs:', newPairs.length);
-  await saveGameSession(session);
+  saveGameSession(session);
   return session.teams;
 };
 
-export const startGame = async (): Promise<void> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) {
-    console.error('[startGame] No session found');
-    return;
-  }
-
-  const session = await getGameSession(sessionId);
+export const startGame = (): void => {
+  const session = getGameSession();
   if (!session) {
-    console.error('[startGame] Session not found');
+    console.error('[startGame] No session found');
     return;
   }
 
   console.log('[startGame] Starting game with', session.players.length, 'players');
 
-  const teams = await shuffleTeams();
+  const teams = shuffleTeams();
   console.log('[startGame] Shuffle returned', teams.length, 'teams');
 
-  const updatedSession = await getGameSession(sessionId);
+  // Re-fetch session after shuffle
+  const updatedSession = getGameSession();
   if (!updatedSession) {
     console.error('[startGame] Session disappeared after shuffle');
     return;
@@ -300,16 +251,13 @@ export const startGame = async (): Promise<void> => {
   updatedSession.phase = 'playing';
   updatedSession.timer = 600;
   updatedSession.isTimerRunning = true;
-  await saveGameSession(updatedSession);
+  saveGameSession(updatedSession);
 
   console.log('[startGame] Game started, final teams:', updatedSession.teams.length);
 };
 
-export const castVote = async (voterId: string, votedId: string): Promise<void> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) return;
-
-  const session = await getGameSession(sessionId);
+export const castVote = (voterId: string, votedId: string): void => {
+  const session = getGameSession();
   if (!session) return;
 
   session.votes[voterId] = votedId;
@@ -319,26 +267,20 @@ export const castVote = async (voterId: string, votedId: string): Promise<void> 
     player.vote = votedId;
   }
 
-  await saveGameSession(session);
+  saveGameSession(session);
 };
 
-export const endVoting = async (): Promise<void> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) return;
-
-  const session = await getGameSession(sessionId);
+export const endVoting = (): void => {
+  const session = getGameSession();
   if (!session) return;
 
   session.phase = 'result';
   session.isTimerRunning = false;
-  await saveGameSession(session);
+  saveGameSession(session);
 };
 
-export const resetGame = async (): Promise<void> => {
-  const sessionId = getCurrentSessionId();
-  if (!sessionId) return;
-
-  const session = await getGameSession(sessionId);
+export const resetGame = (): void => {
+  const session = getGameSession();
   if (!session) return;
 
   session.phase = 'waiting';
@@ -348,6 +290,7 @@ export const resetGame = async (): Promise<void> => {
   session.isTimerRunning = false;
   session.currentTopicId = (session.currentTopicId % TOPICS.length) + 1;
 
+  // Reset player roles but keep players
   session.players = session.players.map(p => ({
     ...p,
     role: undefined,
@@ -356,25 +299,7 @@ export const resetGame = async (): Promise<void> => {
     vote: undefined,
   }));
 
-  await saveGameSession(session);
-};
-
-// Helper function to subscribe to session changes
-export const subscribeToSession = (
-  sessionId: string,
-  callback: (session: GameSession | null) => void
-): (() => void) => {
-  const sessionRef = ref(database, `sessions/${sessionId}`);
-
-  const unsubscribe = onValue(sessionRef, (snapshot) => {
-    if (snapshot.exists()) {
-      callback(snapshot.val() as GameSession);
-    } else {
-      callback(null);
-    }
-  });
-
-  return () => off(sessionRef, 'value', unsubscribe);
+  saveGameSession(session);
 };
 
 // Helper functions

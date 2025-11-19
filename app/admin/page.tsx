@@ -28,7 +28,9 @@ export default function AdminPage() {
   React.useEffect(() => {
     if (!session) {
       console.log('[AdminPage] No session found, creating new session');
-      createGameSession();
+      createGameSession().catch(err => {
+        console.error('[AdminPage] Failed to create session:', err);
+      });
     }
   }, [session]);
 
@@ -40,58 +42,92 @@ export default function AdminPage() {
     );
   }
 
-  const handleAddPlayer = () => {
+  const handleAddPlayer = async () => {
     if (!newPlayerName.trim()) return;
 
-    addPlayer(newPlayerName.trim());
-    setNewPlayerName('');
-  };
-
-  const handleRemovePlayer = (playerId: string) => {
-    if (confirm('このプレイヤーを削除しますか？')) {
-      removePlayer(playerId);
+    try {
+      await addPlayer(newPlayerName.trim());
+      setNewPlayerName('');
+    } catch (err) {
+      console.error('[handleAddPlayer] Error:', err);
+      alert('プレイヤーの追加に失敗しました');
     }
   };
 
-  const handleStartGame = () => {
+  const handleRemovePlayer = async (playerId: string) => {
+    if (confirm('このプレイヤーを削除しますか？')) {
+      try {
+        await removePlayer(playerId);
+      } catch (err) {
+        console.error('[handleRemovePlayer] Error:', err);
+      }
+    }
+  };
+
+  const handleStartGame = async () => {
     if (session.players.length < 4) {
       alert('最低4人のプレイヤーが必要です！');
       return;
     }
-    startGame();
-  };
-
-  const handleToggleTimer = () => {
-    const current = getGameSession();
-    if (current) {
-      current.isTimerRunning = !current.isTimerRunning;
-      saveGameSession(current);
+    try {
+      await startGame();
+    } catch (err) {
+      console.error('[handleStartGame] Error:', err);
+      alert('ゲーム開始に失敗しました');
     }
   };
 
-  const handleResetTimer = () => {
-    const current = getGameSession();
-    if (current) {
-      current.timer = 600;
-      saveGameSession(current);
+  const handleToggleTimer = async () => {
+    try {
+      const current = await getGameSession();
+      if (current) {
+        current.isTimerRunning = !current.isTimerRunning;
+        await saveGameSession(current);
+      }
+    } catch (err) {
+      console.error('[handleToggleTimer] Error:', err);
     }
   };
 
-  const handleNextRound = () => {
-    resetGame();
-  };
-
-  const handleStartVoting = () => {
-    const current = getGameSession();
-    if (current) {
-      current.phase = 'voting';
-      current.isTimerRunning = false;
-      saveGameSession(current);
+  const handleResetTimer = async () => {
+    try {
+      const current = await getGameSession();
+      if (current) {
+        current.timer = 600;
+        await saveGameSession(current);
+      }
+    } catch (err) {
+      console.error('[handleResetTimer] Error:', err);
     }
   };
 
-  const handleEndVoting = () => {
-    endVoting();
+  const handleNextRound = async () => {
+    try {
+      await resetGame();
+    } catch (err) {
+      console.error('[handleNextRound] Error:', err);
+    }
+  };
+
+  const handleStartVoting = async () => {
+    try {
+      const current = await getGameSession();
+      if (current) {
+        current.phase = 'voting';
+        current.isTimerRunning = false;
+        await saveGameSession(current);
+      }
+    } catch (err) {
+      console.error('[handleStartVoting] Error:', err);
+    }
+  };
+
+  const handleEndVoting = async () => {
+    try {
+      await endVoting();
+    } catch (err) {
+      console.error('[handleEndVoting] Error:', err);
+    }
   };
 
   const formatTime = (seconds: number) => {
