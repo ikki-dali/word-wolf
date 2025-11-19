@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Icons</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Icon Generator</h1>
+  <p>Right-click on each canvas and "Save image as..."</p>
+  <div>
+    <canvas id="icon-192" width="192" height="192"></canvas>
+    <canvas id="icon-512" width="512" height="512"></canvas>
+  </div>
+
+  <script>
+    function drawIcon(canvas) {
+      const ctx = canvas.getContext('2d');
+      const size = canvas.width;
+      const scale = size / 512;
+
+      // Background
+      ctx.fillStyle = '#FB923C';
+      ctx.roundRect(0, 0, size, size, size * 0.15);
+      ctx.fill();
+
+      // Sun rays (simplified)
+      ctx.globalAlpha = 0.3;
+      ctx.strokeStyle = '#FFF7ED';
+      ctx.lineWidth = 30 * scale;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, 140 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 20 * scale;
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, 180 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // Sun face
+      ctx.fillStyle = '#FDE047';
+      ctx.beginPath();
+      ctx.arc(size/2, size/2, 120 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#FB923C';
+      ctx.lineWidth = 8 * scale;
+      ctx.stroke();
+
+      // Eyes
+      ctx.fillStyle = '#1F2937';
+      ctx.beginPath();
+      ctx.arc(226 * scale, 236 * scale, 12 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(286 * scale, 236 * scale, 12 * scale, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Cheeks
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = '#FCA5A5';
+      ctx.beginPath();
+      ctx.arc(200 * scale, 256 * scale, 16 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(312 * scale, 256 * scale, 16 * scale, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+
+      // Smile
+      ctx.strokeStyle = '#1F2937';
+      ctx.lineWidth = 8 * scale;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(226 * scale, 276 * scale);
+      ctx.quadraticCurveTo(256 * scale, 296 * scale, 286 * scale, 276 * scale);
+      ctx.stroke();
+
+      // Letter W
+      ctx.fillStyle = 'white';
+      ctx.font = `bold ${120 * scale}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('W', 256 * scale, 400 * scale);
+    }
+
+    drawIcon(document.getElementById('icon-192'));
+    drawIcon(document.getElementById('icon-512'));
+  </script>
+</body>
+</html>

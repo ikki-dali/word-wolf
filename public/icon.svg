@@ -1,0 +1,28 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#FB923C" rx="80"/>
+
+  <!-- Sun rays -->
+  <g opacity="0.3">
+    <circle cx="256" cy="256" r="140" fill="none" stroke="#FFF7ED" stroke-width="30"/>
+    <circle cx="256" cy="256" r="180" fill="none" stroke="#FFF7ED" stroke-width="20"/>
+  </g>
+
+  <!-- Sun face -->
+  <circle cx="256" cy="256" r="120" fill="#FDE047"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#FB923C" stroke-width="8"/>
+
+  <!-- Eyes -->
+  <circle cx="226" cy="236" r="12" fill="#1F2937"/>
+  <circle cx="286" cy="236" r="12" fill="#1F2937"/>
+
+  <!-- Cheeks -->
+  <circle cx="200" cy="256" r="16" fill="#FCA5A5" opacity="0.6"/>
+  <circle cx="312" cy="256" r="16" fill="#FCA5A5" opacity="0.6"/>
+
+  <!-- Smile -->
+  <path d="M 226 276 Q 256 296 286 276" fill="none" stroke="#1F2937" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Letter W -->
+  <text x="256" y="400" font-family="Arial, sans-serif" font-size="120" font-weight="bold" fill="white" text-anchor="middle">W</text>
+</svg>
