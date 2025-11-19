@@ -76,7 +76,12 @@ export const getCurrentSessionId = (): string | null => {
 
 export const addPlayer = (name: string): Player => {
   const session = getGameSession();
-  if (!session) throw new Error('No active session');
+  if (!session) {
+    console.error('[addPlayer] No active session found!');
+    throw new Error('No active session');
+  }
+
+  console.log('[addPlayer] Current session:', session.id, 'Players before:', session.players.length);
 
   const player: Player = {
     id: generatePlayerId(),
@@ -85,7 +90,10 @@ export const addPlayer = (name: string): Player => {
   };
 
   session.players.push(player);
+  console.log('[addPlayer] Added player:', player.name, 'Total players now:', session.players.length);
+
   saveGameSession(session);
+  console.log('[addPlayer] Session saved to localStorage');
 
   return player;
 };

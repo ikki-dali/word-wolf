@@ -9,6 +9,9 @@ export const useGameSession = () => {
     // Initial load
     const loadSession = () => {
       const current = getGameSession();
+      if (current && current.players.length !== session?.players.length) {
+        console.log('[useGameSession] Player count changed:', session?.players.length, '->', current.players.length);
+      }
       setSession(current);
     };
 
@@ -20,6 +23,7 @@ export const useGameSession = () => {
     // Listen to storage events from other tabs
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'wordwolf-game-session') {
+        console.log('[useGameSession] Storage event detected from another tab');
         loadSession();
       }
     };
@@ -30,7 +34,7 @@ export const useGameSession = () => {
       clearInterval(interval);
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [session?.players.length]);
 
   return session;
 };
