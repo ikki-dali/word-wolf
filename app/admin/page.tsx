@@ -6,13 +6,15 @@ import { AsahiKun } from '@/components/AsahiKun';
 import { ResultDisplay } from '@/components/ResultDisplay';
 import { useGameSession, useTimer } from '@/lib/hooks';
 import {
+  addPlayer,
   removePlayer,
   startGame,
   resetGame,
   TOPICS,
   getGameSession,
   saveGameSession,
-  endVoting
+  endVoting,
+  createGameSession
 } from '@/lib/game-storage';
 
 export default function AdminPage() {
@@ -21,6 +23,14 @@ export default function AdminPage() {
 
   const [newPlayerName, setNewPlayerName] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
+
+  // Auto-create session if it doesn't exist
+  React.useEffect(() => {
+    if (!session) {
+      console.log('[AdminPage] No session found, creating new session');
+      createGameSession();
+    }
+  }, [session]);
 
   if (!session) {
     return (
@@ -33,7 +43,6 @@ export default function AdminPage() {
   const handleAddPlayer = () => {
     if (!newPlayerName.trim()) return;
 
-    const { addPlayer } = require('@/lib/game-storage');
     addPlayer(newPlayerName.trim());
     setNewPlayerName('');
   };
@@ -244,6 +253,12 @@ export default function AdminPage() {
               <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg text-xs text-blue-800">
                 👑 管理者モード: 全員の役職とお題が見えています。
               </div>
+
+              {session.teams.length === 0 && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-red-800">
+                  ⚠️ チーム情報が見つかりません。ブラウザのコンソール（F12）を開いて、[shuffleTeams] や [startGame] のログを確認してください。
+                </div>
+              )}
 
               {session.teams.map((team, tIdx) => (
                 <div key={tIdx} className="bg-white rounded-xl shadow-md overflow-hidden border-l-4 border-orange-400">

@@ -22,6 +22,11 @@ export const TOPICS: TopicSet[] = [
   { id: 13, name: '最近', citizen: '最近悲しかったこと', wolf: '最近相談されたこと' },
   { id: 14, name: '最近', citizen: '最近得を積んだこと', wolf: '最近人にがっかりしたこと' },
   { id: 15, name: '最近', citizen: 'まじで勘弁してほしいこと', wolf: 'どうでもいいけどつい見ちゃうこと' },
+
+  // パーソナル（日常編）
+  { id: 16, name: '個人', citizen: '気に入っている自分の性格', wolf: '早く治すべきな自分の性格' },
+  { id: 17, name: '個人', citizen: '意外に褒められる自分の〇〇', wolf: '憧れの芸能人からもらいたい〇〇' },
+  { id: 18, name: '個人', citizen: 'これだけは譲れん！のもの', wolf: '周りに引かれる好きなもの' },
 ];
 
 export const createGameSession = (): GameSession => {
@@ -216,13 +221,31 @@ export const shuffleTeams = (): Player[][] => {
 
 export const startGame = (): void => {
   const session = getGameSession();
-  if (!session) return;
+  if (!session) {
+    console.error('[startGame] No session found');
+    return;
+  }
 
-  shuffleTeams();
-  session.phase = 'playing';
-  session.timer = 600;
-  session.isTimerRunning = true;
-  saveGameSession(session);
+  console.log('[startGame] Starting game with', session.players.length, 'players');
+
+  const teams = shuffleTeams();
+  console.log('[startGame] Shuffle returned', teams.length, 'teams');
+
+  // Re-fetch session after shuffle
+  const updatedSession = getGameSession();
+  if (!updatedSession) {
+    console.error('[startGame] Session disappeared after shuffle');
+    return;
+  }
+
+  console.log('[startGame] Updated session has', updatedSession.teams.length, 'teams');
+
+  updatedSession.phase = 'playing';
+  updatedSession.timer = 600;
+  updatedSession.isTimerRunning = true;
+  saveGameSession(updatedSession);
+
+  console.log('[startGame] Game started, final teams:', updatedSession.teams.length);
 };
 
 export const castVote = (voterId: string, votedId: string): void => {
