@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserPlus, LogIn } from 'lucide-react';
 import { AsahiKun } from '@/components/AsahiKun';
-import { addPlayer, getGameSession, createGameSession } from '@/lib/game-storage';
+import { addPlayer, getGameSession } from '@/lib/game-storage';
 
 export default function JoinPage() {
   const router = useRouter();
@@ -13,10 +13,10 @@ export default function JoinPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Initialize game session if it doesn't exist
+    // Check if session exists, don't create a new one
     const session = getGameSession();
     if (!session) {
-      createGameSession();
+      console.log('[JoinPage] No session found. Admin must create session first.');
     }
   }, []);
 
