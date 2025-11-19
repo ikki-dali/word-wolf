@@ -106,7 +106,12 @@ export const updatePlayer = (playerId: string, updates: Partial<Player>): void =
 
 export const shuffleTeams = (): Player[][] => {
   const session = getGameSession();
-  if (!session) return [];
+  if (!session) {
+    console.error('[shuffleTeams] No session found');
+    return [];
+  }
+
+  console.log('[shuffleTeams] Starting with', session.players.length, 'players');
 
   let bestTeams: Player[][] = [];
   let minConflicts = Infinity;
@@ -132,6 +137,9 @@ export const shuffleTeams = (): Player[][] => {
         // チーム数がお題数より多い場合でも、全チームに確実にお題が割り当てられます
         const randomTopicId = Math.floor(Math.random() * TOPICS.length) + 1;
         const wolfIndex = Math.floor(Math.random() * teamMembers.length);
+
+        console.log(`[shuffleTeams] Team ${i + 1}: ${teamMembers.length} members, topic ID ${randomTopicId}`);
+
         const teamWithRoles = teamMembers.map((p, idx) => ({
           ...p,
           role: (idx === wolfIndex ? 'wolf' : 'citizen') as 'wolf' | 'citizen',
@@ -164,11 +172,13 @@ export const shuffleTeams = (): Player[][] => {
   // チーム分けが成功した場合のみplayersを更新
   if (bestTeams.length > 0) {
     session.players = bestTeams.flat();
+    console.log('[shuffleTeams] Created', bestTeams.length, 'teams with total', session.players.length, 'players');
   } else {
     // フォールバック: チーム分けに失敗した場合、全員を1チームにする
-    console.warn('チーム分けに失敗しました。全員を1チームにします。');
+    console.warn('[shuffleTeams] チーム分けに失敗しました。全員を1チームにします。');
     const randomTopicId = Math.floor(Math.random() * TOPICS.length) + 1;
     const wolfIndex = Math.floor(Math.random() * session.players.length);
+    console.log('[shuffleTeams] Fallback: 1 team, topic ID', randomTopicId);
     session.players = session.players.map((p, idx) => ({
       ...p,
       role: (idx === wolfIndex ? 'wolf' : 'citizen') as 'wolf' | 'citizen',
@@ -177,6 +187,17 @@ export const shuffleTeams = (): Player[][] => {
     }));
     session.teams = [session.players];
   }
+
+  // Verify all players have required fields
+  session.players.forEach((p) => {
+    if (!p.topicId || !p.teamId || !p.role) {
+      console.error(`[shuffleTeams] Player ${p.name} missing fields:`, {
+        topicId: p.topicId,
+        teamId: p.teamId,
+        role: p.role,
+      });
+    }
+  });
 
   const newPairs: string[] = [];
   session.teams.forEach(team => {
@@ -188,6 +209,7 @@ export const shuffleTeams = (): Player[][] => {
   });
   session.history = [...session.history, ...newPairs];
 
+  console.log('[shuffleTeams] Final teams:', session.teams.length, 'History pairs:', newPairs.length);
   saveGameSession(session);
   return session.teams;
 };

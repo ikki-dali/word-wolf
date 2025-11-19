@@ -270,11 +270,16 @@ export default function AdminPage() {
                     </div>
                     <div className="mt-3 pt-3 border-t border-gray-100">
                       {(() => {
-                        const teamTopic = TOPICS.find(t => t.id === team[0]?.topicId) || TOPICS[0];
+                        const firstPlayer = team[0];
+                        if (!firstPlayer?.topicId) {
+                          console.error('[AdminPage] Team missing topicId:', team.map(p => p.name));
+                        }
+                        const teamTopic = TOPICS.find(t => t.id === firstPlayer?.topicId) || TOPICS[0];
                         return (
                           <>
                             <div className="text-xs font-bold text-orange-600 mb-2">
                               お題: {teamTopic.name}
+                              {!firstPlayer?.topicId && <span className="text-red-500 ml-2">(エラー: お題未設定)</span>}
                             </div>
                             <div className="flex gap-4 text-xs">
                               <div>

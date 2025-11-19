@@ -152,12 +152,17 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({ session }) => {
         <h3 className="text-xl font-bold mb-4">全チーム情報</h3>
         <div className="space-y-3">
           {session.teams.map((team, idx) => {
-            const teamTopic = TOPICS.find(t => t.id === team[0]?.topicId) || TOPICS[0];
+            const firstPlayer = team[0];
+            if (!firstPlayer?.topicId) {
+              console.error('[ResultDisplay] Team missing topicId:', team.map(p => p.name));
+            }
+            const teamTopic = TOPICS.find(t => t.id === firstPlayer?.topicId) || TOPICS[0];
             return (
               <div key={idx} className="border border-gray-200 p-4 rounded-xl">
                 <div className="font-bold text-gray-700 mb-2">Team {idx + 1}</div>
                 <div className="text-xs text-orange-600 font-bold mb-2">
                   お題: {teamTopic.name}
+                  {!firstPlayer?.topicId && <span className="text-red-500 ml-2">(エラー)</span>}
                 </div>
                 <div className="flex flex-wrap gap-2 mb-2">
                   {team.map(p => (

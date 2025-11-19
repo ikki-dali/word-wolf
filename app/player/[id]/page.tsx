@@ -40,6 +40,11 @@ export default function PlayerPage() {
   // プレイヤーのお題を取得（チームごとに異なるお題）
   const currentTopic = TOPICS.find(t => t.id === player?.topicId) || TOPICS[0];
 
+  // Debug: Log if topic is missing
+  if (player && !player.topicId) {
+    console.error('[PlayerPage] Player missing topicId:', player.name, 'Player data:', player);
+  }
+
   const hasVoted = session?.votes[playerId] !== undefined;
 
   const handleVote = (votedId: string) => {
